@@ -1,0 +1,22 @@
+{
+  "name": "weatherapp",
+  "version": "1.0.0",
+  "description": "This is a NodeJS practice project for HTTP Requests",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aqarain/nodejs-weather-app.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/aqarain/nodejs-weather-app/issues"
+  },
+  "homepage": "https://github.com/aqarain/nodejs-weather-app#readme",
+  "dependencies": {
+    "axios": "^0.21.0"
+  }
+}
