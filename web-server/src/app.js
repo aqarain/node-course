@@ -1,17 +1,61 @@
 const path = require("path");
 const express = require("express");
+const hbs = require("hbs");
 
 // creating express app
 const app = express();
 
+// Define paths for Express config
 const publicDirectoryPath = path.join(__dirname, "../public");
+const viewsPath = path.join(__dirname, "../src/templates/views");
+const partialsPath = path.join(__dirname, "../src/templates/partials");
+
+// Setup handlebars engine and views location
+app.set("view engine", "hbs");
+app.set("views", viewsPath);
+hbs.registerPartials(partialsPath);
+
+// Static Pages
+// Setup static directory to serve
+// First the app will look for the route match in the folder mentioned below which is 'public'
 app.use(express.static(publicDirectoryPath));
 
-// it let us configure what the app should do when someone tries to get a resource at a specific URL.
-// May be we sending back HTML or JSON
+// Dynamic pages
+// If the route match is not found in 'public' then it looks for route matches here
+app.get("", (req, res) => {
+  res.render("index", { title: "Weather", name: "Atif Qayyum" });
+});
+
+app.get("/about", (req, res) => {
+  res.render("about", { title: "About Me", name: "Atif Qayyum" });
+});
+
+app.get("/help", (req, res) => {
+  res.render("help", {
+    title: "Help",
+    message: "This is a sample help message!",
+    name: "Atif Qayyum"
+  });
+});
 
 app.get("/weather", (req, res) => {
   res.send({ forecast: "It is raining", location: "Lahore" });
+});
+
+app.get("/help/*", (req, res) => {
+  res.render("404", {
+    title: "404",
+    name: "Atif Qayyum",
+    errorMessage: "Help article not found"
+  });
+});
+
+app.get("*", (req, res) => {
+  res.render("404", {
+    title: "404",
+    name: "Atif Qayyum",
+    errorMessage: "Page not found"
+  });
 });
 
 app.listen(3000, () => {
