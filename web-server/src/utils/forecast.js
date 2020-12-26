@@ -12,11 +12,11 @@ const forecast = (lon, lat, cb) => {
         cb(data.error.info);
       } else {
         const {
-          current: { temperature, feelslike, weather_descriptions }
+          current: { temperature, feelslike, weather_descriptions, humidity }
         } = data;
         cb(
           null,
-          `${weather_descriptions}. It is currently ${temperature} degrees out. It feels like ${feelslike} degrees out.`
+          `${weather_descriptions}. It is currently ${temperature} degrees out. It feels like ${feelslike} degrees out. The humidity is ${humidity}%.`
         );
       }
     })
