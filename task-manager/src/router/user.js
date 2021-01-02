@@ -48,10 +48,9 @@ router.patch("/user/:id", async (req, res) => {
       that don't exist on document for e.g. if user tries to update "height" in body
     */
   try {
-    const user = await User.findByIdAndUpdate(_id, req.body, {
-      new: true,
-      runValidators: true
-    });
+    const user = await User.findById(_id);
+    updates.forEach(key => (user[key] = req.body[key])); // This will update all the keys in body on user
+    await user.save();
 
     if (!user) return res.status(404).send(); // if there is no user to update with that id
     res.send(user);
