@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 // Creating the Schema explicitly
 const userSchema = new mongoose.Schema({
@@ -18,6 +19,7 @@ const userSchema = new mongoose.Schema({
   },
   email: {
     type: String,
+    unique: true,
     required: true,
     lowercase: true, // means email will be converted to lowercase before saving to collection
     validate(value) {
@@ -33,10 +35,48 @@ const userSchema = new mongoose.Schema({
       if (value.toLowerCase().includes("password"))
         throw new Error("length should not contain 'password' text");
     }
-  }
+  },
+  tokens: [
+    {
+      token: {
+        type: String,
+        required: true
+      }
+    }
+  ]
 });
 
-// Utilizing Middleware - run before/pre save the below function
+/*
+When we pass an object to res.send({user}) in our router/user.js file, expressJS behind the scenes call
+JSON.stringify().
+*/
+userSchema.methods.toJSON = function () {
+  const user = this;
+  const userObject = user.toObject();
+  delete userObject.password;
+  delete userObject.tokens;
+  return userObject;
+};
+
+//
+userSchema.statics.findByCredentials = async (email, password) => {
+  const user = await User.findOne({ email });
+  if (!user) throw new Error("Unable to login!");
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) throw new Error("Unable to login!");
+  return user;
+};
+
+//
+userSchema.methods.generateAuthToken = async function () {
+  const user = this;
+  const token = jwt.sign({ _id: user._id.toString() }, "thisismynewcourse");
+  user.tokens = user.tokens.concat({ token });
+  await user.save();
+  return token;
+};
+
+// Utilizing Middleware for Password Hashing- run before/pre save the below function
 userSchema.pre("save", async function (next) {
   const user = this;
 

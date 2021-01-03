@@ -1,5 +1,6 @@
 const express = require("express");
 const User = require("../models/user");
+const auth = require("../middleware/auth");
 
 const router = new express.Router();
 
@@ -7,36 +8,56 @@ router.post("/users", async (req, res) => {
   const user = new User(req.body);
   try {
     await user.save();
-    res.status(201).send(user);
+    const token = await user.generateAuthToken();
+    res.status(201).send({ user, token });
   } catch (err) {
     res.status(400).send(err);
   }
 });
 
-router.get("/users", async (req, res) => {
-  try {
-    const users = await User.find({});
-    res.send(users);
-  } catch (err) {
-    res.status(500).send();
-  }
-});
-
-router.get("/user/:id", async (req, res) => {
-  const _id = req.params.id;
-  try {
-    const user = await User.findById(_id);
-    if (!user) return res.status(404).send();
-    res.send(user);
-  } catch (err) {
-    res.status(500).send();
-  }
-});
-
-router.patch("/user/:id", async (req, res) => {
+router.post("/user/login", async (req, res) => {
   const {
-    params: { id: _id }
+    body: { email, password }
   } = req;
+  try {
+    const user = await User.findByCredentials(email, password);
+    const token = await user.generateAuthToken();
+    res.send({ user, token });
+  } catch (err) {
+    res.status(400).send();
+  }
+});
+
+router.post("/user/logout", auth, async (req, res) => {
+  try {
+    req.user.tokens = req.user.tokens.filter(
+      token => token.token !== req.token
+    );
+    await req.user.save();
+    res.send();
+  } catch (err) {
+    res.status(500).send();
+  }
+});
+
+router.post("/user/logoutAll", auth, async (req, res) => {
+  try {
+    req.user.tokens = [];
+    await req.user.save();
+    res.send();
+  } catch (err) {
+    res.status(500).send();
+  }
+});
+
+router.get("/users/me", auth, async (req, res) => {
+  res.send(req.user); // we set the req.user in auth function
+});
+
+router.patch("/user/me", auth, async (req, res) => {
+  // const {
+  //   params: { id: _id }
+  // } = req;
   const updates = Object.keys(req.body);
   const allowedUpdates = ["name", "email", "password", "age"]; // fields that can be updated
   const isValidOperation = updates.every(item => allowedUpdates.includes(item));
@@ -48,25 +69,20 @@ router.patch("/user/:id", async (req, res) => {
       that don't exist on document for e.g. if user tries to update "height" in body
     */
   try {
-    const user = await User.findById(_id);
-    updates.forEach(key => (user[key] = req.body[key])); // This will update all the keys in body on user
-    await user.save();
+    // const user = await User.findById(req.user._id);
+    updates.forEach(key => (req.user[key] = req.body[key])); // This will update all the keys in body on user
+    await req.user.save();
 
-    if (!user) return res.status(404).send(); // if there is no user to update with that id
-    res.send(user);
+    res.send(req.user);
   } catch (err) {
     res.status(400).send(err);
   }
 });
 
-router.delete("/user/:id", async (req, res) => {
-  const {
-    params: { id: _id }
-  } = req;
+router.delete("/user/me", auth, async (req, res) => {
   try {
-    const user = await User.findByIdAndDelete(_id);
-    if (!user) return res.status(404).send(); // if there is no user to delete with the given id
-    res.send(user);
+    await req.user.remove();
+    res.send(req.user);
   } catch (err) {
     res.status(500).send(err);
   }
