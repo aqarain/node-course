@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const validator = require("validator");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const Task = require("./task");
 
 // Creating the Schema explicitly
 const userSchema = new mongoose.Schema({
@@ -44,6 +45,17 @@ const userSchema = new mongoose.Schema({
       }
     }
   ]
+});
+
+/**
+ * Setting up a virtual property which creates a relationship between tasks and user
+ * virtual() allows us to set up virtual attirbutes means it is not stored in the DB like "owner" field in Task
+ * It is just for Mongoose to figure out who owns what and how they are related
+ */
+userSchema.virtual("tasks", {
+  ref: "Task",
+  localField: "_id",
+  foreignField: "owner"
 });
 
 /*
@@ -95,6 +107,13 @@ userSchema.pre("save", async function (next) {
   are done running our code for e.g. hashing the password and now you can save the user.
   If we don't call next(), the code will get stuck here in this function and user will never be saved
   */
+  next();
+});
+
+// Delete user tasks if user is removed
+userSchema.pre("remove", async function (next) {
+  const user = this;
+  await Task.deleteMany({ owner: user._id });
   next();
 });
 
