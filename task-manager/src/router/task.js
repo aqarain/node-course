@@ -13,12 +13,35 @@ router.post("/tasks", auth, async (req, res) => {
   }
 });
 
+/** GET /tasks?completed=true
+ *  GET /tasks?limit=1&skip=2             (skip means to skip first 2 tasks)
+ *  GET /tasks?sortBy=createdAt:asc       (asc = 1, desc = -1)
+ * */
+
 router.get("/tasks", auth, async (req, res) => {
   try {
     // 2 ways to do it.. one is commented
     // const tasks = await Task.find({ owner: req.user._id });
     // res.send(tasks);
-    await req.user.populate("tasks").execPopulate();
+    const {
+      query: { completed, limit, skip, sortBy }
+    } = req;
+    const match = {};
+    const sort = {};
+    if (completed) {
+      match.completed = completed === "true";
+    }
+    if (sortBy) {
+      const [propertyName, sortType] = sortBy.split(":");
+      sort[propertyName] = sortType === "desc" ? -1 : 1;
+    }
+    await req.user
+      .populate({
+        path: "tasks",
+        match,
+        options: { limit: parseInt(limit), skip: parseInt(skip), sort }
+      })
+      .execPopulate();
     res.send(req.user.tasks);
   } catch (err) {
     res.status(500).send(err);

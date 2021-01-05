@@ -5,47 +5,53 @@ const jwt = require("jsonwebtoken");
 const Task = require("./task");
 
 // Creating the Schema explicitly
-const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-    trim: true // means space will be trimmed in name before saving to collection
-  },
-  age: {
-    type: Number,
-    default: 0, // if no age is provided as it is not required, default age will be 0
-    validate(value) {
-      if (value < 0) throw new Error("Age must be a positive number");
-    }
-  },
-  email: {
-    type: String,
-    unique: true,
-    required: true,
-    lowercase: true, // means email will be converted to lowercase before saving to collection
-    validate(value) {
-      if (!validator.isEmail(value)) throw new Error("Email is invalid");
-    }
-  },
-  password: {
-    type: String,
-    required: true,
-    trim: true,
-    validate(value) {
-      if (value.length < 6) throw new Error("length should be greater than 6");
-      if (value.toLowerCase().includes("password"))
-        throw new Error("length should not contain 'password' text");
-    }
-  },
-  tokens: [
-    {
-      token: {
-        type: String,
-        required: true
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true // means space will be trimmed in name before saving to collection
+    },
+    age: {
+      type: Number,
+      default: 0, // if no age is provided as it is not required, default age will be 0
+      validate(value) {
+        if (value < 0) throw new Error("Age must be a positive number");
       }
-    }
-  ]
-});
+    },
+    email: {
+      type: String,
+      unique: true,
+      required: true,
+      lowercase: true, // means email will be converted to lowercase before saving to collection
+      validate(value) {
+        if (!validator.isEmail(value)) throw new Error("Email is invalid");
+      }
+    },
+    password: {
+      type: String,
+      required: true,
+      trim: true,
+      validate(value) {
+        if (value.length < 6)
+          throw new Error("length should be greater than 6");
+        if (value.toLowerCase().includes("password"))
+          throw new Error("length should not contain 'password' text");
+      }
+    },
+    tokens: [
+      {
+        token: {
+          type: String,
+          required: true
+        }
+      }
+    ]
+  },
+  {
+    timestamps: true
+  }
+);
 
 /**
  * Setting up a virtual property which creates a relationship between tasks and user
