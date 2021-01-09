@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const validator = require("validator");
 
 // "task-manager-api" is the db name
-mongoose.connect("mongodb://127.0.0.1:27017/task-manager-api", {
+mongoose.connect(process.env.MONGOD_URL, {
   useNewUrlParser: true,
   useCreateIndex: true
 });

@@ -4,7 +4,7 @@ const User = require("../models/user");
 const auth = async (req, res, next) => {
   try {
     const token = req.header("Authorization").replace("Bearer ", "");
-    const decoded = jwt.verify(token, "thisismynewcourse"); // validating token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET); // validating token
 
     /*We find correct user by validating 2 things here:
         1. ID from jwt payload must match with one in the document.
