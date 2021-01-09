@@ -1,6 +1,8 @@
 const express = require("express");
 const User = require("../models/user");
 const auth = require("../middleware/auth");
+const multer = require("multer");
+const sharp = require("sharp");
 
 const router = new express.Router();
 
@@ -85,6 +87,63 @@ router.delete("/user/me", auth, async (req, res) => {
     res.send(req.user);
   } catch (err) {
     res.status(500).send(err);
+  }
+});
+
+/***
+ * "dest" is the location where the files will be stored
+ * "limits: { fileSize } is max file size in bytes (1 MB = 1000000 Bytes)"
+ * "fileFilter(req, file, cb){}" takes care of the type of file that can be uploaded
+ * */
+const upload = multer({
+  // dest: "avatars",
+  limits: { fileSize: 1000000 },
+  fileFilter(req, file, cb) {
+    if (!file.originalname.match(/\.(jpg|jpeg|png)$/))
+      return cb(new Error("Please upload an image"));
+
+    cb(undefined, true); // called if file type is correct
+  }
+});
+
+// Add and Update avatar
+router.post(
+  "/user/me/avatar",
+  auth,
+  upload.single("avatar"), // "avatar" is the name of the key in your request body
+  async (req, res) => {
+    // Image resizing and format changing before saving the image in DB using Sharp library
+    const buffer = await sharp(req.file.buffer)
+      .resize({ width: 250, height: 250 })
+      .png()
+      .toBuffer();
+    req.user.avatar = buffer;
+    await req.user.save();
+    res.send();
+  },
+  /**
+   * If we don't add the below code and an error occurs, HTML will be sent back.
+   * Now it will send a JSON error message defined in "cb" above in "multer({})" */
+  (error, req, res, next) => {
+    res.status(400).send({ error: error.message });
+  }
+);
+
+router.delete("/user/me/avatar", auth, async (req, res) => {
+  req.user.avatar = undefined;
+  await req.user.save();
+  res.send();
+});
+
+router.get("/user/:id/avatar", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user || !user.avatar) throw new Error();
+
+    res.setHeader("Content-Type", "image/png");
+    res.send(user.avatar);
+  } catch (e) {
+    res.status(404).send();
   }
 });
 
