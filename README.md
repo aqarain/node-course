@@ -1,6 +1,8 @@
 # Node Course
 
 
+## This project is part of my self-learning
+
 This repository contains two small nodejs porjects:
 
 1. Weather App (https://aqarain-weather-app.herokuapp.com/)
